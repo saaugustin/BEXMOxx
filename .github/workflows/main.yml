@@ -1,0 +1,184 @@
+name: "⚡ EnigMano (Final Ultra Fast V12)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      INSTANCE:
+        description: "Instance ID"
+        required: true
+        default: "1"
+
+jobs:
+  deploy-ultra-fast:
+    name: "🚀 Deploy Instance ${{ github.event.inputs.INSTANCE }}"
+    runs-on: windows-latest
+    timeout-minutes: 350
+
+    env:
+      INSTANCE_ID: ${{ github.event.inputs.INSTANCE }}
+      TAILSCALE_AUTH_KEY: ${{ secrets.TAILSCALE_AUTH_KEY }}
+      RDP_PASSWORD: ${{ secrets.RDP_PASSWORD }}
+      REPO: ${{ github.repository }}
+      
+      # 🔗 YOUR TOOLS (Link One Removed)
+      LINK_TWO: "https://fn-sorter-pro.streamlit.app/"
+      LINK_THREE: "https://miri1408x-create.github.io/txt-merger/"
+
+      # 📦 UPDATED DROPBOX LINK (Fortnite-V7)
+      ZIP_URL: "https://www.dropbox.com/scl/fi/xqqk8u72nvgia7wpgswnc/Fortnite-V7.zip?rlkey=s6g9fgvitjnbz3sdjmbmou4ga&st=t5oyksu3&dl=1"
+
+    steps:
+      # ---------------------------------------------------------
+      # STEP 1: INITIALIZATION
+      # ---------------------------------------------------------
+      - name: 📌 Deployment Parameters
+        shell: pwsh
+        run: |
+          Write-Host "==============================================="
+          Write-Host "🔹 Target Instance ID    : $env:INSTANCE_ID"
+          Write-Host "🚀 Strategy              : Instant Browser + Auto-Download"
+          Write-Host "⚡ Optimizations         : Bloatware Removed + Discord Alert"
+          Write-Host "==============================================="
+
+      # ---------------------------------------------------------
+      # STEP 2: CREDENTIALS
+      # ---------------------------------------------------------
+      - name: 🔐 Validate Credentials
+        shell: pwsh
+        run: |
+          if (-not $env:TAILSCALE_AUTH_KEY) { Write-Error "❌ Missing Secret 'TAILSCALE_AUTH_KEY'"; exit 1 }
+          Write-Host "✅ Credentials validated."
+
+      # ---------------------------------------------------------
+      # STEP 3: SYSTEM OPTIMIZATION (Speed Boost)
+      # ---------------------------------------------------------
+      - name: ⚙️ Configure System
+        shell: pwsh
+        run: |
+          # 1. 🚀 ENABLE HIGH PERFORMANCE
+          powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
+
+          # 2. 🛑 DISABLE BLOATWARE (Speed)
+          Write-Host "🚀 Killing Background Services..."
+          Stop-Service -Name "wuauserv" -Force -ErrorAction SilentlyContinue
+          Set-Service -Name "wuauserv" -StartupType Disabled
+          Stop-Service -Name "WSearch" -Force -ErrorAction SilentlyContinue
+          Set-Service -Name "WSearch" -StartupType Disabled
+
+          # 3. Disable SmartScreen
+          Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "SmartScreenEnabled" -Value "Off" -Force -ErrorAction SilentlyContinue
+          Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\AppHost" -Name "EnableWebContentEvaluation" -Value 0 -Force -ErrorAction SilentlyContinue
+          
+          # 4. Exclude C:\ from Defender (Speed)
+          Add-MpPreference -ExclusionPath "C:\" -ErrorAction SilentlyContinue
+
+          # 5. RDP Setup
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          
+          # 6. Create User 'RDP'
+          $username = "RDP"
+          $pw = if ($env:RDP_PASSWORD) { $env:RDP_PASSWORD } else { "Enigma@Tactical123!" }
+          $securePass = ConvertTo-SecureString $pw -AsPlainText -Force
+          
+          if (Get-LocalUser -Name $username -ErrorAction SilentlyContinue) { Remove-LocalUser -Name $username }
+          New-LocalUser -Name $username -Password $securePass -Description "Tactical User" -AccountNeverExpires
+          Add-LocalGroupMember -Group "Administrators" -Member $username
+          Add-LocalGroupMember -Group "Remote Desktop Users" -Member $username
+          
+          echo "RDP_USER=$username" >> $env:GITHUB_ENV
+
+      # ---------------------------------------------------------
+      # STEP 4: CONFIGURE AUTO-LAUNCH
+      # ---------------------------------------------------------
+      - name: 🛠️ Setup Browser Automation
+        shell: pwsh
+        run: |
+          # 1. Install ONLY Tailscale (Rest is pre-installed)
+          Write-Host "⏳ Fast Installing Tailscale..."
+          choco install tailscale -y --no-progress
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+
+          # 2. CREATE STARTUP SCRIPT
+          # This script runs automatically when you log in.
+          # It launches Chrome with 3 tabs: 
+          #   1. The Zip File (Triggers Download)
+          #   2. Link Two (Sorter)
+          #   3. Link Three (Merger)
+          
+          $startupFolder = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp"
+          $autoLaunchPath = "$startupFolder\InstantLaunch.bat"
+          $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+          
+          $batchContent = @"
+          @echo off
+          timeout /t 3
+          start "" "$chromePath" "$env:ZIP_URL" "$env:LINK_TWO" "$env:LINK_THREE"
+          "@
+          
+          Set-Content -Path $autoLaunchPath -Value $batchContent
+          Write-Host "✅ Auto-Launch Configured: Browser will open instantly on login."
+
+      # ---------------------------------------------------------
+      # STEP 5: CONNECT
+      # ---------------------------------------------------------
+      - name: 🔌 Connect to Grid
+        shell: pwsh
+        timeout-minutes: 5
+        run: |
+          & "C:\Program Files\Tailscale\tailscale.exe" up --authkey="$env:TAILSCALE_AUTH_KEY" --hostname="Enigma-$env:INSTANCE_ID" --accept-routes
+          
+          Start-Sleep -Seconds 10
+          $tsIP = & "C:\Program Files\Tailscale\tailscale.exe" ip -4
+          
+          if ($tsIP) {
+              echo "TS_IP=$tsIP" >> $env:GITHUB_ENV
+              Write-Host "==============================================="
+              Write-Host "✅ CONNECTION ESTABLISHED"
+              Write-Host "🌐 IP ADDRESS : $tsIP"
+              Write-Host "👤 USERNAME   : $env:RDP_USER"
+              Write-Host "🔑 PASSWORD   : (Hidden in Secrets)"
+              Write-Host "==============================================="
+          } else {
+              Write-Error "❌ Connection Failed."
+              exit 1
+          }
+
+      # ---------------------------------------------------------
+      # STEP 6: DISCORD NOTIFICATION
+      # ---------------------------------------------------------
+      - name: 🔔 Send Info to Discord
+        shell: pwsh
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if ($env:DISCORD_WEBHOOK) {
+            $payload = @{
+              content = "✅ **Enigma Instance Ready!**`n🌐 **IP:** $env:TS_IP`n👤 **User:** $env:RDP_USER`n🔑 **Password:** (Check Secrets)"
+            }
+            $json = $payload | ConvertTo-Json
+            try {
+              Invoke-RestMethod -Uri $env:DISCORD_WEBHOOK -Method Post -Body $json -ContentType 'application/json'
+              Write-Host "✅ Discord Notification Sent."
+            } catch {
+              Write-Warning "⚠️ Failed to send Discord notification."
+            }
+          }
+
+      # ---------------------------------------------------------
+      # STEP 7: MAINTENANCE
+      # ---------------------------------------------------------
+      - name: ⚔️ Maintain Session
+        shell: pwsh
+        run: |
+          Write-Host "🚦 Session Active. Max Duration: 350 Minutes."
+          $counter = 0
+          while ($counter -lt 21000) {
+            if ($counter % 300 -eq 0) { 
+                Write-Host "⏳ Status: ACTIVE [$([math]::Round($counter/60)) mins elapsed] - IP: $env:TS_IP"
+                if ((Get-Service "Tailscale").Status -ne "Running") { exit 1 }
+            }
+            Start-Sleep -Seconds 10
+            $counter += 10
+          }
