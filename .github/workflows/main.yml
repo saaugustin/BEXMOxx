@@ -1,4 +1,4 @@
-name: "⚡ EnigMano (Final Ultra Fast V12)"
+name: "⚡ EnigMano (V13 - No Security Warnings)"
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
         default: "1"
 
 jobs:
-  deploy-ultra-fast:
+  deploy-v13-no-warnings:
     name: "🚀 Deploy Instance ${{ github.event.inputs.INSTANCE }}"
     runs-on: windows-latest
     timeout-minutes: 350
@@ -20,11 +20,11 @@ jobs:
       RDP_PASSWORD: ${{ secrets.RDP_PASSWORD }}
       REPO: ${{ github.repository }}
       
-      # 🔗 YOUR TOOLS (Link One Removed)
+      # 🔗 YOUR TOOLS
       LINK_TWO: "https://fn-sorter-pro.streamlit.app/"
       LINK_THREE: "https://miri1408x-create.github.io/txt-merger/"
 
-      # 📦 UPDATED DROPBOX LINK (Fortnite-V7)
+      # 📦 DROPBOX LINK (Fortnite-V7)
       ZIP_URL: "https://www.dropbox.com/scl/fi/xqqk8u72nvgia7wpgswnc/Fortnite-V7.zip?rlkey=s6g9fgvitjnbz3sdjmbmou4ga&st=t5oyksu3&dl=1"
 
     steps:
@@ -36,8 +36,8 @@ jobs:
         run: |
           Write-Host "==============================================="
           Write-Host "🔹 Target Instance ID    : $env:INSTANCE_ID"
-          Write-Host "🚀 Strategy              : Instant Browser + Auto-Download"
-          Write-Host "⚡ Optimizations         : Bloatware Removed + Discord Alert"
+          Write-Host "🚀 Strategy              : Disable Security Warnings"
+          Write-Host "⚡ Mode                  : High Performance"
           Write-Host "==============================================="
 
       # ---------------------------------------------------------
@@ -50,34 +50,43 @@ jobs:
           Write-Host "✅ Credentials validated."
 
       # ---------------------------------------------------------
-      # STEP 3: SYSTEM OPTIMIZATION (Speed Boost)
+      # STEP 3: SYSTEM OPTIMIZATION (Warnings Disabled)
       # ---------------------------------------------------------
-      - name: ⚙️ Configure System
+      - name: ⚙️ Configure System & Disable Warnings
         shell: pwsh
         run: |
-          # 1. 🚀 ENABLE HIGH PERFORMANCE
+          # 1. 🛡️ DISABLE "OPEN FILE - SECURITY WARNING" (CRITICAL FIX)
+          # This environment variable tells Windows to skip the "Publisher" check.
+          [Environment]::SetEnvironmentVariable("SEE_MASK_NOZONECHECKS", "1", "Machine")
+          [Environment]::SetEnvironmentVariable("SEE_MASK_NOZONECHECKS", "1", "User")
+          
+          # 2. 🛡️ DISABLE "PUBLISHER COULD NOT BE VERIFIED" PROMPT
+          # We modify the Registry for "Internet Zone" (3) to allow launching unsafe files (1806=0)
+          $regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\Zones\3"
+          if (-not (Test-Path $regPath)) { New-Item -Path $regPath -Force | Out-Null }
+          Set-ItemProperty -Path $regPath -Name "1806" -Value 0 -Type DWord -Force
+          
+          # 3. 🚀 ENABLE HIGH PERFORMANCE
           powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
 
-          # 2. 🛑 DISABLE BLOATWARE (Speed)
-          Write-Host "🚀 Killing Background Services..."
+          # 4. 🛑 DISABLE BLOATWARE
+          Write-Host "🚀 Optimizing Services..."
           Stop-Service -Name "wuauserv" -Force -ErrorAction SilentlyContinue
           Set-Service -Name "wuauserv" -StartupType Disabled
           Stop-Service -Name "WSearch" -Force -ErrorAction SilentlyContinue
           Set-Service -Name "WSearch" -StartupType Disabled
 
-          # 3. Disable SmartScreen
+          # 5. 🛡️ DISABLE DEFENDER / SMARTSCREEN
           Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "SmartScreenEnabled" -Value "Off" -Force -ErrorAction SilentlyContinue
           Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\AppHost" -Name "EnableWebContentEvaluation" -Value 0 -Force -ErrorAction SilentlyContinue
-          
-          # 4. Exclude C:\ from Defender (Speed)
           Add-MpPreference -ExclusionPath "C:\" -ErrorAction SilentlyContinue
 
-          # 5. RDP Setup
+          # 6. RDP Setup
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           
-          # 6. Create User 'RDP'
+          # 7. Create User 'RDP'
           $username = "RDP"
           $pw = if ($env:RDP_PASSWORD) { $env:RDP_PASSWORD } else { "Enigma@Tactical123!" }
           $securePass = ConvertTo-SecureString $pw -AsPlainText -Force
@@ -101,12 +110,6 @@ jobs:
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
           # 2. CREATE STARTUP SCRIPT
-          # This script runs automatically when you log in.
-          # It launches Chrome with 3 tabs: 
-          #   1. The Zip File (Triggers Download)
-          #   2. Link Two (Sorter)
-          #   3. Link Three (Merger)
-          
           $startupFolder = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp"
           $autoLaunchPath = "$startupFolder\InstantLaunch.bat"
           $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
@@ -118,7 +121,7 @@ jobs:
           "@
           
           Set-Content -Path $autoLaunchPath -Value $batchContent
-          Write-Host "✅ Auto-Launch Configured: Browser will open instantly on login."
+          Write-Host "✅ Auto-Launch Configured."
 
       # ---------------------------------------------------------
       # STEP 5: CONNECT
@@ -155,12 +158,11 @@ jobs:
         run: |
           if ($env:DISCORD_WEBHOOK) {
             $payload = @{
-              content = "✅ **Enigma Instance Ready!**`n🌐 **IP:** $env:TS_IP`n👤 **User:** $env:RDP_USER`n🔑 **Password:** (Check Secrets)"
+              content = "✅ **Enigma V13 Ready!**`n🌐 **IP:** $env:TS_IP`n👤 **User:** $env:RDP_USER`n🔑 **Password:** (Check Secrets)"
             }
             $json = $payload | ConvertTo-Json
             try {
               Invoke-RestMethod -Uri $env:DISCORD_WEBHOOK -Method Post -Body $json -ContentType 'application/json'
-              Write-Host "✅ Discord Notification Sent."
             } catch {
               Write-Warning "⚠️ Failed to send Discord notification."
             }
